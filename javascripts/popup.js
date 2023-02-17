@@ -141,6 +141,14 @@ function getRandomStorageId() {
     return key;
 }
 
+function validateImportedItems(items) {
+    items.forEach(item => {
+        if (!item.url || !item.content || !item.name) {
+            throw new Error("Invalid JSON format");
+        }
+    })
+}
+
 chrome.tabs.query({ 'active': true, 'currentWindow': true }, function (tab) {
     tab_url = tab[0].url;
     refreshSetsList(tab_url);
@@ -149,10 +157,10 @@ chrome.tabs.query({ 'active': true, 'currentWindow': true }, function (tab) {
 $(document).ready(function () {
     setCurrentFilter();
     
-	$('.donatelink').click(function () {
-		$('#donate').toggle();
-	});
-	
+    $('.donatelink').click(function () {
+        $('#donate').toggle();
+    });
+    
     $("#check").click(function () {
         
     });
@@ -163,7 +171,7 @@ $(document).ready(function () {
     });
 
     $("#import").click(function () {
-		var importBlock = $('#importBlock');
+        var importBlock = $('#importBlock');
 
         if (importBlock.is(':visible')) {
             importBlock.hide();
@@ -171,33 +179,36 @@ $(document).ready(function () {
         }
 
         importBlock.show();
-		importBlock.find('#txtImportFormJson').focus();
+        importBlock.find('#txtImportFormJson').focus();
     });
-	
+    
     $("#btnImportSave").click(function () {
-		var json = $('#txtImportFormJson').val();
+        var json = $('#txtImportFormJson').val();
 
-		try {
-			var importedForm = JSON.parse(json);
+        try {
+            var importedForm = JSON.parse(json);
 
-			if (!importedForm.url || !importedForm.content || !importedForm.name) {
-				throw new Error("Invalid JSON format");
-			}
-			
-			if (importedForm.url === '*'){
-				importedForm.name += '-global';
-			}
-			
-			var key = getRandomStorageId();
-			localStorage.setItem(key, JSON.stringify(importedForm));
+            if (!Array.isArray(importedForm)) {
+                importedForm = [importedForm]
+            }
 
-		}
-		catch (err) {
-			alert('Got an error: ' + err.message);
-		}
-		
-		refreshSetsList(tab_url);
-		$('#importBlock').hide();
+            validateImportedItems(importedForm)
+
+            importedForm.forEach(item => {
+                if (item.url === '*') {
+                    item.name += '-global';
+                }
+
+                var key = getRandomStorageId();
+                localStorage.setItem(key, JSON.stringify(item));
+            })
+        }
+        catch (err) {
+            alert('Got an error: ' + err.message);
+        }
+        
+        refreshSetsList(tab_url);
+        $('#importBlock').hide();
     });
 
     $("#clearall").click(function () {
@@ -236,7 +247,7 @@ $(document).ready(function () {
             var key = getRandomStorageId();
 
             var setSettings = {
-				url: tab_url,
+                url: tab_url,
                 autoSubmit: false,
                 submitQuery: '',
                 content: obj.content,
@@ -299,7 +310,7 @@ $(document).ready(function () {
         var key = tr.data('key');
         
         localStorage.removeItem(key);
-		refreshSetsList(tab_url);
+        refreshSetsList(tab_url);
     });
 
     sets.on("click", 'td.export', function (event) {
